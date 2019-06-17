@@ -25,5 +25,22 @@
 
     GOVUK.stickAtTopWhenScrolling.init()
     GOVUK.shimLinksWithButtonRole.init()
+
+    $(window).load(function () {
+      if ($('.js-error-summary').length) {
+        // If there is an error summary, set focus to the summary
+        if ($('.error-summary').length) {
+          $('.error-summary').focus()
+          $('.error-summary a').click(function (e) {
+            e.preventDefault()
+            var href = $(this).attr('href')
+            $(href).focus()
+          })
+        } else {
+          // Otherwise, set focus to the field with the error
+          $('.error input:first').focus()
+        }
+      }
+    })
   })()
 </script>
