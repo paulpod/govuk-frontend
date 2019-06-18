@@ -11,6 +11,7 @@
     @include govuk-font($size: 48, $weight: bold);
 
     display: block;
+    background-color: red;
 
     margin-top: 0;
     @include govuk-responsive-margin(8, "bottom");
