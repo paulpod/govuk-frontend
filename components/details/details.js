@@ -685,9 +685,6 @@ function generateUniqueID () {
  * and 'shim' to add accessiblity enhancements for all browsers
  *
  * http://caniuse.com/#feat=details
- *
- * Usage instructions:
- * the 'polyfill' will be automatically initialised
  */
 
 var KEY_ENTER = 13;

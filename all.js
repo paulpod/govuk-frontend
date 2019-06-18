@@ -1291,28 +1291,21 @@ if (detect) return
 })
 .call('object' === typeof window && window || 'object' === typeof self && self || 'object' === typeof global && global || {});
 
-/**
- * JavaScript 'shim' to trigger the click event of element(s) when the space key is pressed.
- *
- * Created since some Assistive Technologies (for example some Screenreaders)
- * will tell a user to press space on a 'button', so this functionality needs to be shimmed
- * See https://github.com/alphagov/govuk_elements/pull/272#issuecomment-233028270
- *
- * Usage instructions:
- * the 'shim' will be automatically initialised
- */
-
 var KEY_SPACE = 32;
 var DEBOUNCE_TIMEOUT_IN_SECONDS = 1;
-var debounceFormSubmitTimer = null;
 
 function Button ($module) {
   this.$module = $module;
+  this.debounceFormSubmitTimer = null;
 }
 
 /**
-* if the event target element has a role='button' and the event is key space pressed
-* then it prevents the default event and triggers a click event
+* JavaScript 'shim' to trigger the click event of element(s) when the space key is pressed.
+*
+* Created since some Assistive Technologies (for example some Screenreaders)
+* will tell a user to press space on a 'button', so this functionality needs to be shimmed
+* See https://github.com/alphagov/govuk_elements/pull/272#issuecomment-233028270
+*
 * @param {object} event event
 */
 Button.prototype.handleKeyDown = function (event) {
@@ -1339,14 +1332,14 @@ Button.prototype.debounce = function (event) {
   }
 
   // If the timer is still running then we want to prevent the click from submitting the form
-  if (debounceFormSubmitTimer) {
+  if (this.debounceFormSubmitTimer) {
     event.preventDefault();
     return false
   }
 
-  debounceFormSubmitTimer = setTimeout(function () {
-    debounceFormSubmitTimer = null;
-  }, DEBOUNCE_TIMEOUT_IN_SECONDS * 1000);
+  this.debounceFormSubmitTimer = setTimeout(function () {
+    this.debounceFormSubmitTimer = null;
+  }.bind(this), DEBOUNCE_TIMEOUT_IN_SECONDS * 1000);
 };
 
 /**
@@ -1363,9 +1356,6 @@ Button.prototype.init = function () {
  * and 'shim' to add accessiblity enhancements for all browsers
  *
  * http://caniuse.com/#feat=details
- *
- * Usage instructions:
- * the 'polyfill' will be automatically initialised
  */
 
 var KEY_ENTER = 13;
@@ -1511,7 +1501,7 @@ Details.prototype.destroy = function (node) {
 
 function CharacterCount ($module) {
   this.$module = $module;
-  this.$textarea = $module.querySelector('.js-character-count');
+  this.$textarea = $module.querySelector('.govuk-js-character-count');
 }
 
 CharacterCount.prototype.defaults = {
@@ -1651,8 +1641,12 @@ CharacterCount.prototype.updateCountMessage = function () {
   var thresholdValue = maxLength * thresholdPercent / 100;
   if (thresholdValue > currentLength) {
     countMessage.classList.add('govuk-character-count__message--disabled');
+    // Ensure threshold is hidden for users of assistive technologies
+    countMessage.setAttribute('aria-hidden', true);
   } else {
     countMessage.classList.remove('govuk-character-count__message--disabled');
+    // Ensure threshold is visible for users of assistive technologies
+    countMessage.removeAttribute('aria-hidden');
   }
 
   // Update styles
@@ -1853,16 +1847,6 @@ ErrorSummary.prototype.focusTarget = function ($target) {
     return false
   }
 
-  // Prefer using the history API where possible, as updating
-  // window.location.hash causes the viewport to jump to the input briefly
-  // before then scrolling to the label/legend in IE10, IE11 and Edge (as tested
-  // in Edge 17).
-  if (window.history.pushState) {
-    window.history.pushState(null, null, '#' + inputId);
-  } else {
-    window.location.hash = inputId;
-  }
-
   // Scroll the legend or label into view *before* calling focus on the input to
   // avoid extra scrolling in browsers that don't support `preventScroll` (which
   // at time of writing is most of them...)
@@ -1929,7 +1913,7 @@ Header.prototype.init = function () {
   }
 
   // Check for button
-  var $toggleButton = $module.querySelector('.js-header-toggle');
+  var $toggleButton = $module.querySelector('.govuk-js-header-toggle');
   if (!$toggleButton) {
     return
   }
@@ -2023,6 +2007,54 @@ Radios.prototype.handleClick = function (event) {
     }
   }.bind(this));
 };
+
+(function(undefined) {
+
+    // Detection from https://github.com/Financial-Times/polyfill-service/pull/1062/files#diff-b09a5d2acf3314b46a6c8f8d0c31b85c
+    var detect = (
+      'Element' in this && "nextElementSibling" in document.documentElement
+    );
+
+    if (detect) return
+
+
+    (function (global) {
+
+      // Polyfill from https://github.com/Financial-Times/polyfill-service/pull/1062/files#diff-404b69b4750d18dea4174930a49170fd
+      Object.defineProperty(Element.prototype, "nextElementSibling", {
+        get: function(){
+          var el = this.nextSibling;
+          while (el && el.nodeType !== 1) { el = el.nextSibling; }
+          return (el.nodeType === 1) ? el : null;
+        }
+      });
+
+    }(this));
+
+}).call('object' === typeof window && window || 'object' === typeof self && self || 'object' === typeof global && global || {});
+
+(function(undefined) {
+
+    // Detection from https://github.com/Financial-Times/polyfill-service/pull/1062/files#diff-a162235fbc9c0dd40d4032265f44942e
+    var detect = (
+      'Element' in this && 'previousElementSibling' in document.documentElement
+    );
+
+    if (detect) return
+
+    (function (global) {
+      // Polyfill from https://github.com/Financial-Times/polyfill-service/pull/1062/files#diff-b45a1197b842728cb76b624b6ba7d739
+      Object.defineProperty(Element.prototype, 'previousElementSibling', {
+        get: function(){
+          var el = this.previousSibling;
+          while (el && el.nodeType !== 1) { el = el.previousSibling; }
+          return (el.nodeType === 1) ? el : null;
+        }
+      });
+
+    }(this));
+
+}).call('object' === typeof window && window || 'object' === typeof self && self || 'object' === typeof global && global || {});
 
 function Tabs ($module) {
   this.$module = $module;
@@ -2189,6 +2221,10 @@ Tabs.prototype.unsetAttributes = function ($tab) {
 };
 
 Tabs.prototype.onTabClick = function (e) {
+  if (!e.target.classList.contains('govuk-tabs__tab')) {
+  // Allow events on child DOM elements to bubble up to tab parent
+    return false
+  }
   e.preventDefault();
   var $newTab = e.target;
   var $currentTab = this.getCurrentTab();
@@ -2228,7 +2264,7 @@ Tabs.prototype.activateNextTab = function () {
   var currentTab = this.getCurrentTab();
   var nextTabListItem = currentTab.parentNode.nextElementSibling;
   if (nextTabListItem) {
-    var nextTab = nextTabListItem.firstElementChild;
+    var nextTab = nextTabListItem.querySelector('.govuk-tabs__tab');
   }
   if (nextTab) {
     this.hideTab(currentTab);
@@ -2242,7 +2278,7 @@ Tabs.prototype.activatePreviousTab = function () {
   var currentTab = this.getCurrentTab();
   var previousTabListItem = currentTab.parentNode.previousElementSibling;
   if (previousTabListItem) {
-    var previousTab = previousTabListItem.firstElementChild;
+    var previousTab = previousTabListItem.querySelector('.govuk-tabs__tab');
   }
   if (previousTab) {
     this.hideTab(currentTab);
@@ -2300,45 +2336,45 @@ function initAll (options) {
   // Defaults to the entire document if nothing is set.
   var scope = typeof options.scope !== 'undefined' ? options.scope : document;
 
-  // Find all buttons with [role=button] on the scope to enhance.
-  new Button(scope).init();
+  var $buttons = scope.querySelectorAll('[data-module="govuk-button"]');
+  nodeListForEach($buttons, function ($button) {
+    new Button($button).init();
+  });
 
-  // Find all global accordion components to enhance.
-  var $accordions = scope.querySelectorAll('[data-module="accordion"]');
+  var $accordions = scope.querySelectorAll('[data-module="govuk-accordion"]');
   nodeListForEach($accordions, function ($accordion) {
     new Accordion($accordion).init();
   });
 
-  // Find all global details elements to enhance.
-  var $details = scope.querySelectorAll('details');
+  var $details = scope.querySelectorAll('[data-module="govuk-details"]');
   nodeListForEach($details, function ($detail) {
     new Details($detail).init();
   });
 
-  var $characterCount = scope.querySelectorAll('[data-module="character-count"]');
-  nodeListForEach($characterCount, function ($characterCount) {
+  var $characterCounts = scope.querySelectorAll('[data-module="govuk-character-count"]');
+  nodeListForEach($characterCounts, function ($characterCount) {
     new CharacterCount($characterCount).init();
   });
 
-  var $checkboxes = scope.querySelectorAll('[data-module="checkboxes"]');
+  var $checkboxes = scope.querySelectorAll('[data-module="govuk-checkboxes"]');
   nodeListForEach($checkboxes, function ($checkbox) {
     new Checkboxes($checkbox).init();
   });
 
   // Find first error summary module to enhance.
-  var $errorSummary = scope.querySelector('[data-module="error-summary"]');
+  var $errorSummary = scope.querySelector('[data-module="govuk-error-summary"]');
   new ErrorSummary($errorSummary).init();
 
   // Find first header module to enhance.
-  var $toggleButton = scope.querySelector('[data-module="header"]');
+  var $toggleButton = scope.querySelector('[data-module="govuk-header"]');
   new Header($toggleButton).init();
 
-  var $radios = scope.querySelectorAll('[data-module="radios"]');
+  var $radios = scope.querySelectorAll('[data-module="govuk-radios"]');
   nodeListForEach($radios, function ($radio) {
     new Radios($radio).init();
   });
 
-  var $tabs = scope.querySelectorAll('[data-module="tabs"]');
+  var $tabs = scope.querySelectorAll('[data-module="govuk-tabs"]');
   nodeListForEach($tabs, function ($tabs) {
     new Tabs($tabs).init();
   });
